@@ -1,4 +1,4 @@
-# Moveo Assignment
+# Docker-Kafka-Simulator
 
 ## Overview
 
@@ -49,7 +49,7 @@ Follow the steps below to set up the application locally.
 1. **Clone the Repository:**
 
    ```bash
-   git clone git@github.com:ItaySagy12345/Moveo-Assignment.git
+   git clone git@github.com:ItaySagy12345/Docker-Kafka-Simulator.git
    cd <project_name>
 
 2. **Initialize Containerized Application:**

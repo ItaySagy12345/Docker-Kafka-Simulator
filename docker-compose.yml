@@ -5,11 +5,11 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: moveo_db
+      POSTGRES_DB: docker_kafka_simulator_db
     ports:
       - "5432:5432"
     networks:
-      - moveo-net
+      - docker_kafka_simulator-net
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -24,7 +24,7 @@ services:
     ports:
       - "8080:80"
     networks:
-      - moveo-net
+      - docker_kafka_simulator-net
     volumes:
       - ./pgpass:/pgpass
       - ./servers.json:/pgadmin4/servers.json
@@ -38,7 +38,7 @@ services:
     ports:
       - "2181:2181"
     networks:
-      - moveo-net
+      - docker_kafka_simulator-net
 
   kafka:
     image: confluentinc/cp-kafka:latest
@@ -54,7 +54,7 @@ services:
     depends_on:
       - zookeeper
     networks:
-      - moveo-net
+      - docker_kafka_simulator-net
     restart: always
 
   server:
@@ -66,7 +66,7 @@ services:
       context: .
       dockerfile: Dockerfile
     environment:
-      DATABASE_URL: postgres://postgres:postgres@postgres:5432/moveo_db
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/docker_kafka_simulator_db
       KAFKA_BROKER: kafka:9093
     ports:
       - "8000:8000"
@@ -74,7 +74,7 @@ services:
       - postgres
       - kafka
     networks:
-      - moveo-net
+      - docker_kafka_simulator-net
     volumes:
       - ./src:/app/src
     command: >
@@ -98,7 +98,7 @@ services:
       "
 
 networks:
-  moveo-net:
+  docker_kafka_simulator-net:
     driver: bridge
 
 volumes:

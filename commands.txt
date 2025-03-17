@@ -13,7 +13,7 @@ Downgrade migration (down 1): alembic downgrade -1
 Downgrade migration (to default base): alembic downgrade base
 
 # CREDENTIALS:
-postgres: pass: postgres, port: 5432, name: moveo_db
+postgres: pass: postgres, port: 5432, name: docker_kafka_simulator_db
 pgadmin - http://localhost:8080: email: itayemails@gmail.com, pass: postgres
 
 # DOCKER
