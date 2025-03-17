@@ -1,0 +1,105 @@
+services:
+  postgres:
+    image: postgres:latest
+    container_name: postgres-container
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: moveo_db
+    ports:
+      - "5432:5432"
+    networks:
+      - moveo-net
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin-container
+    environment:
+      PGADMIN_DEFAULT_EMAIL: itayemails@gmail.com
+      PGADMIN_DEFAULT_PASSWORD: postgres
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    ports:
+      - "8080:80"
+    networks:
+      - moveo-net
+    volumes:
+      - ./pgpass:/pgpass
+      - ./servers.json:/pgadmin4/servers.json
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper-container
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - moveo-net
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka-container
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9093:9093"
+    depends_on:
+      - zookeeper
+    networks:
+      - moveo-net
+    restart: always
+
+  server:
+    image: server
+    container_name: server-container
+    env_file:
+      - .env
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/moveo_db
+      KAFKA_BROKER: kafka:9093
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - kafka
+    networks:
+      - moveo-net
+    volumes:
+      - ./src:/app/src
+    command: >
+      sh -c "
+        echo 'Waiting for Postgres to be ready...';
+        until nc -z -v -w30 postgres 5432; do
+          echo 'Waiting for Postgres...';
+          sleep 5;
+        done;
+
+        echo 'Postgres is up, running migrations...';
+        alembic upgrade head && 
+        echo 'Migrations complete, waiting for Kafka...';
+        until nc -z -v -w30 kafka 9093; do
+          echo 'Waiting for Kafka...';
+          sleep 5;
+        done;
+
+        echo 'Kafka is up, starting app...';
+        uvicorn src.server:app --host 0.0.0.0 --port 8000
+      "
+
+networks:
+  moveo-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
